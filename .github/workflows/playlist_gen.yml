@@ -1,6 +1,7 @@
 name: Generate MP3 Playlist
 
 on:
+  workflow_dispatch:
   push:
     paths:
       - 'gtts/**/*.mp3'
