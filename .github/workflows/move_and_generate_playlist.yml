@@ -1,0 +1,46 @@
+name: Move MP3 and Generate Playlist
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'docs/gtts/*.mp3'
+
+jobs:
+  organize-and-generate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Move MP3s from docs/gtts to gtts
+        run: |
+          mkdir -p gtts
+          mv docs/gtts/*.mp3 gtts/ || echo "No files to move"
+          rm -rf docs/gtts
+
+      - name: Generate playlist.json
+        run: |
+          mkdir -p docs/assets
+          echo "[" > docs/assets/playlist.json
+          files=$(find gtts -type f -name "*.mp3" | sort)
+          first=true
+          for f in $files; do
+            url="https://raw.githubusercontent.com/${{ github.repository }}/main/$f"
+            if [ "$first" = true ]; then
+              echo "  \"$url\"" >> docs/assets/playlist.json
+              first=false
+            else
+              echo "  ,\"$url\"" >> docs/assets/playlist.json
+            fi
+          done
+          echo "]" >> docs/assets/playlist.json
+
+      - name: Commit and push changes
+        run: |
+          git config --global user.name 'github-actions'
+          git config --global user.email 'github-actions@github.com'
+          git add gtts docs/assets/playlist.json
+          git commit -m "Moved MP3s to gtts/ and updated playlist.json" || echo "No changes to commit"
+          git push
