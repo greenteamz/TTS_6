@@ -121,7 +121,7 @@
       playerList.innerHTML = currentItems.map((file, index) => `
         <div class="audio-player">
           <strong>${start + index + 1}. ${decodeURIComponent(file.split("/").pop().replace(/.mp3$/, ""))}</strong>
-          <audio preload="metadata" onplay="handlePlay(${start + index})">
+          <audio preload="metadata" controls onplay="handlePlay(${start + index})">
             <source src="${file}" type="audio/mpeg">
             Your browser does not support the audio tag.
           </audio>
@@ -134,12 +134,12 @@
 
     function renderPagination() {
       const totalPages = Math.ceil(filteredFiles.length / itemsPerPage);
-      let rows = Math.ceil(totalPages / 20);
+      let rows = Math.ceil(totalPages / 15);
       let buttonsHTML = "";
 
       for (let r = 0; r < rows; r++) {
         buttonsHTML += '<div style="display:flex;flex-wrap:wrap;justify-content:center;margin-bottom:4px">';
-        for (let i = 1 + r * 20; i <= Math.min(totalPages, (r + 1) * 20); i++) {
+        for (let i = 1 + r * 15; i <= Math.min(totalPages, (r + 1) * 15); i++) {
           buttonsHTML += `<button class="${i === currentPage ? 'active' : ''}" onclick="goToPage(${i})">${i}</button>`;
         }
         buttonsHTML += '</div>';
