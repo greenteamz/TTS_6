@@ -50,6 +50,7 @@
     }
     .pagination {
       display: flex;
+      flex-wrap: wrap;
       justify-content: center;
       gap: 0.5rem;
       margin-top: 1rem;
@@ -95,88 +96,106 @@
     <div class="pagination" id="pagination"></div>
   </div>
 
-<script>
-  const itemsPerPage = 10;
-  let currentPage = 1;
-  let filteredFiles = [];
-  let allFiles = [];
-  let currentIndex = 0;
+  <script>
+    const itemsPerPage = 10;
+    let files = [];
+    let currentPage = 1;
+    let filteredFiles = [];
+    let currentIndex = 0;
+    let audioElements = [];
 
-  async function loadPlaylist() {
-    try {
-      const response = await fetch('assets/playlist.json');
-      const data = await response.json();
-      allFiles = data;
-      filteredFiles = allFiles;
-      renderPlayerList();
-    } catch (error) {
-      console.error("Failed to load playlist:", error);
-      document.getElementById("playerList").innerHTML = "<p>Unable to load playlist.</p>";
-    }
-  }
+    fetch("./assets/playlist.json")
+      .then(res => res.json())
+      .then(data => {
+        files = data;
+        filteredFiles = [...files];
+        renderPlayerList();
+      });
 
-  function renderPlayerList() {
-    const start = (currentPage - 1) * itemsPerPage;
-    const end = start + itemsPerPage;
-    const currentItems = filteredFiles.slice(start, end);
+    function renderPlayerList() {
+      const start = (currentPage - 1) * itemsPerPage;
+      const end = start + itemsPerPage;
+      const currentItems = filteredFiles.slice(start, end);
 
-    document.getElementById("playerList").innerHTML =
-      currentItems.map((file, index) => `
+      const playerList = document.getElementById("playerList");
+      playerList.innerHTML = currentItems.map((file, index) => `
         <div class="audio-player">
           <strong>${start + index + 1}. ${decodeURIComponent(file.split("/").pop().replace(/.mp3$/, ""))}</strong>
-          <audio controls preload="none" onplay="currentIndex = ${start + index}">
+          <audio preload="metadata" onplay="handlePlay(${start + index})">
             <source src="${file}" type="audio/mpeg">
             Your browser does not support the audio tag.
           </audio>
-        </div>`).join("");
+        </div>
+      `).join("");
 
-    renderPagination();
-  }
-
-  function renderPagination() {
-    const totalPages = Math.ceil(filteredFiles.length / itemsPerPage);
-    let buttons = "";
-    for (let i = 1; i <= totalPages; i++) {
-      buttons += `<button class="${i === currentPage ? 'active' : ''}" onclick="goToPage(${i})">${i}</button>`;
+      audioElements = document.querySelectorAll("audio");
+      renderPagination();
     }
-    document.getElementById("pagination").innerHTML = buttons;
-  }
 
-  function goToPage(page) {
-    currentPage = page;
-    renderPlayerList();
-  }
+    function renderPagination() {
+      const totalPages = Math.ceil(filteredFiles.length / itemsPerPage);
+      let rows = Math.ceil(totalPages / 20);
+      let buttonsHTML = "";
 
-  function toggleTheme() {
-    document.body.classList.toggle("dark-mode");
-    document.querySelectorAll(".audio-player").forEach(div => div.classList.toggle("dark-mode"));
-  }
+      for (let r = 0; r < rows; r++) {
+        buttonsHTML += '<div style="display:flex;flex-wrap:wrap;justify-content:center;margin-bottom:4px">';
+        for (let i = 1 + r * 20; i <= Math.min(totalPages, (r + 1) * 20); i++) {
+          buttonsHTML += `<button class="${i === currentPage ? 'active' : ''}" onclick="goToPage(${i})">${i}</button>`;
+        }
+        buttonsHTML += '</div>';
+      }
 
-  function searchFiles(keyword) {
-    currentPage = 1;
-    keyword = keyword.toLowerCase();
-    filteredFiles = allFiles.filter(f => decodeURIComponent(f).toLowerCase().includes(keyword));
-    renderPlayerList();
-  }
-
-  function nextTrack() {
-    if (currentIndex < filteredFiles.length - 1) {
-      currentIndex++;
-      const nextAudio = document.querySelectorAll("audio")[currentIndex % itemsPerPage];
-      nextAudio?.play();
+      document.getElementById("pagination").innerHTML = buttonsHTML;
     }
-  }
 
-  function prevTrack() {
-    if (currentIndex > 0) {
-      currentIndex--;
-      const prevAudio = document.querySelectorAll("audio")[currentIndex % itemsPerPage];
-      prevAudio?.play();
+    function goToPage(page) {
+      currentPage = page;
+      renderPlayerList();
     }
-  }
 
-  loadPlaylist(); // Initial call
-</script>
+    function toggleTheme() {
+      document.body.classList.toggle("dark-mode");
+      document.querySelectorAll(".audio-player").forEach(div => div.classList.toggle("dark-mode"));
+    }
+
+    function searchFiles(keyword) {
+      currentPage = 1;
+      keyword = keyword.toLowerCase();
+      filteredFiles = files.filter(f => decodeURIComponent(f).toLowerCase().includes(keyword));
+      renderPlayerList();
+    }
+
+    function handlePlay(index) {
+      currentIndex = index;
+      audioElements.forEach((audio, i) => {
+        if (i !== index % itemsPerPage) audio.pause();
+      });
+    }
+
+    function nextTrack() {
+      if (currentIndex < filteredFiles.length - 1) {
+        currentIndex++;
+        const nextPage = Math.floor(currentIndex / itemsPerPage) + 1;
+        if (nextPage !== currentPage) {
+          currentPage = nextPage;
+          renderPlayerList();
+        }
+        setTimeout(() => audioElements[currentIndex % itemsPerPage]?.play(), 300);
+      }
+    }
+
+    function prevTrack() {
+      if (currentIndex > 0) {
+        currentIndex--;
+        const prevPage = Math.floor(currentIndex / itemsPerPage) + 1;
+        if (prevPage !== currentPage) {
+          currentPage = prevPage;
+          renderPlayerList();
+        }
+        setTimeout(() => audioElements[currentIndex % itemsPerPage]?.play(), 300);
+      }
+    }
+  </script>
 </body>
 
 </html>
