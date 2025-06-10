@@ -134,12 +134,12 @@
 
     function renderPagination() {
       const totalPages = Math.ceil(filteredFiles.length / itemsPerPage);
-      let rows = Math.ceil(totalPages / 15);
+      let rows = Math.ceil(totalPages / 10);
       let buttonsHTML = "";
 
       for (let r = 0; r < rows; r++) {
         buttonsHTML += '<div style="display:flex;flex-wrap:wrap;justify-content:center;margin-bottom:4px">';
-        for (let i = 1 + r * 15; i <= Math.min(totalPages, (r + 1) * 15); i++) {
+        for (let i = 1 + r * 10; i <= Math.min(totalPages, (r + 1) * 10); i++) {
           buttonsHTML += `<button class="${i === currentPage ? 'active' : ''}" onclick="goToPage(${i})">${i}</button>`;
         }
         buttonsHTML += '</div>';
